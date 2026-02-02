@@ -1,4 +1,4 @@
-name: Django CI
+name: Django CI & Docker Build
 
 on:
   push:
@@ -7,9 +7,8 @@ on:
     branches: [ "main", "develop" ]
 
 jobs:
-  build:
+  test-django:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout del código
       uses: actions/checkout@v3
@@ -28,6 +27,16 @@ jobs:
       run: |
         python manage.py makemigrations --check --dry-run
     
-    - name: Correr tests
+    - name: Correr tests básicos
       run: |
         python manage.py test
+
+  build-docker:
+    needs: test-django
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v3
+      
+    - name: Construir imagen Docker
+      run: docker build . -t wallet-flow:latest
