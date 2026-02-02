@@ -31,3 +31,4 @@ class Transaccion(models.Model):
 
     class Meta:
         ordering = ['-fecha'] # Muestra primero lo más reciente
+        
