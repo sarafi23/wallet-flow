@@ -1,0 +1,2058 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Wallet Flow</title>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+
+    <style>
+        /* Dashboard Specific Styles */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 270px;
+            background: var(--card-bg-solid);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem 1rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+            text-decoration: none;
+            padding: 0.5rem;
+        }
+
+        .sidebar-logo i {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .nav-section {
+            margin-bottom: 1rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            padding-left: 0.75rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 0.15rem;
+            font-size: 0.85rem;
+        }
+
+        .nav-item:hover {
+            background: var(--glass-bg);
+            color: var(--text);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .nav-item i {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 270px;
+            flex: 1;
+            padding: 1.5rem;
+            width: calc(100% - 270px);
+        }
+
+        /* Header */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+
+        .header-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-base);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card.balance {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border-color: var(--primary);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-icon.balance {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .stat-icon.income {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .stat-icon.expense {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.15rem;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.7rem;
+            margin-top: 0.25rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .stat-change.positive {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-light);
+        }
+
+        .stat-change.negative {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-light);
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Chart Container */
+        .chart-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .quick-action-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+        }
+
+        .quick-action-btn i {
+            font-size: 1.5rem;
+        }
+
+        /* Transactions Table */
+        .transactions-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            transition: all var(--transition-fast);
+            margin-bottom: 0.5rem;
+        }
+
+        .transaction-item:hover {
+            background: var(--dark-bg-secondary);
+        }
+
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .transaction-details {
+            flex: 1;
+        }
+
+        .transaction-name {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.125rem;
+        }
+
+        .transaction-category {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .transaction-amount {
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+
+        .transaction-amount.income {
+            color: var(--success-light);
+        }
+
+        .transaction-amount.expense {
+            color: var(--danger-light);
+        }
+
+        /* Goals/Wishlist */
+        .goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .goal-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            transition: all var(--transition-base);
+        }
+
+        .goal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .goal-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: var(--radius-lg);
+            margin-bottom: 1rem;
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .goal-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .goal-target {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .goal-progress {
+            margin-top: 1rem;
+        }
+
+        .goal-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .goal-saved {
+            color: var(--success-light);
+            font-weight: 600;
+        }
+
+        .goal-remaining {
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* SPA Sections */
+        .spa-section {
+            display: none;
+        }
+
+        .spa-section.active {
+            display: block;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="{% url 'home' %}" class="sidebar-logo">
+                <i class="bi bi-wallet2"></i>
+                <span>Wallet Flow</span>
+            </a>
+
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-section-title">Principal</div>
+                    <a class="nav-item active" data-section="dashboard" onclick="WalletFlow.showSection('dashboard', this)">
+                        <i class="bi bi-grid-fill"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a class="nav-item" data-section="transactions" onclick="WalletFlow.showSection('transactions', this)">
+                        <i class="bi bi-receipt"></i>
+                        <span>Transacciones</span>
+                    </a>
+                    <a class="nav-item" data-section="goals" onclick="WalletFlow.showSection('goals', this)">
+                        <i class="bi bi-trophy"></i>
+                        <span>Metas de Ahorro</span>
+                    </a>
+                </div>
+
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Cuenta</div>
+                    <a class="nav-item" data-section="profile" onclick="WalletFlow.showSection('profile', this)">
+                        <i class="bi bi-person"></i>
+                        <span>Mi Perfil</span>
+                    </a>
+                    <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-item"
+                            style="width: 100%; background: none; border: none; text-align: left;">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard</h1>
+                    <p class="header-subtitle" id="current-date"></p>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'export_excel' %}" class="btn btn-ghost" title="Exportar a Excel">
+                        <i class="bi bi-file-earmark-excel"></i>
+                    </a>
+                    <img src="{{ user_profile.get_avatar_url }}" alt="{{ user.username }}" class="user-avatar"
+                        onclick="WalletFlow.openModal('modalProfile')">
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <div id="section-dashboard" class="spa-section active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card balance stagger-item">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Balance Total</div>
+                                <div class="stat-value">${{ balance|floatformat:0 }}</div>
+                                <div class="stat-change {% if balance > 0 %}positive{% else %}negative{% endif %}">
+                                    <i class="bi {% if balance > 0 %}bi-graph-up{% else %}bi-graph-down{% endif %}"></i>
+                                    <span>Acumulado 6 meses</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon balance">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                        </div>
+                        <!-- Mini trend indicator -->
+                        <div style="margin-top: 0.75rem; padding: 0.5rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-graph-up-arrow" style="color: #10b981;"></i>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Ahorrando <strong style="color: #10b981;">{{ ahorro_porcentaje }}%</strong> promedio</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stagger-item">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Ingresos Totales</div>
+                                <div class="stat-value text-success">${{ total_ingresos|floatformat:0 }}</div>
+                                <div class="stat-change positive">
+                                    <i class="bi bi-calendar-check"></i>
+                                    <span>6 meses</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon income">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                        </div>
+                        <!-- Stats breakdown -->
+                        <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; font-size: 0.7rem;">
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600;">${% if total_ingresos > 0 %}{{ total_ingresos|divide:6|floatformat:0 }}{% else %}0{% endif %}</div>
+                                <div style="color: var(--text-muted);">Promedio/mes</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600;">${% if total_ingresos > 0 %}{{ total_ingresos|floatformat:0 }}{% else %}0{% endif %}</div>
+                                <div style="color: var(--text-muted);">Máximo</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600;">${% if total_ingresos > 0 %}{{ total_ingresos|floatformat:0 }}{% else %}0{% endif %}</div>
+                                <div style="color: var(--text-muted);">Mínimo</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stagger-item">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Gastos Totales</div>
+                                <div class="stat-value text-danger">${{ total_gastos|floatformat:0 }}</div>
+                                <div class="stat-change {% if total_gastos < total_ingresos %}positive{% else %}negative{% endif %}">
+                                    <i class="bi {% if total_gastos < total_ingresos %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %}"></i>
+                                    <span>{% if total_gastos < total_ingresos %}Dentro del presupuesto{% else %}Sobre presupuesto{% endif %}</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon expense">
+                                <i class="bi bi-credit-card-2-front"></i>
+                            </div>
+                        </div>
+                        <!-- Stats breakdown -->
+                        <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; font-size: 0.7rem;">
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600;">${% if total_gastos > 0 %}{{ total_gastos|divide:6|floatformat:0 }}{% else %}0{% endif %}</div>
+                                <div style="color: var(--text-muted);">Promedio/mes</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600;">${% if total_gastos > 0 %}{{ total_gastos|floatformat:0 }}{% else %}0{% endif %}</div>
+                                <div style="color: var(--text-muted);">Máximo</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600;">${% if total_gastos > 0 %}{{ total_gastos|floatformat:0 }}{% else %}0{% endif %}</div>
+                                <div style="color: var(--text-muted);">Mínimo</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions stagger-item">
+                    <button class="quick-action-btn" onclick="openModal('modalTransaccion')">
+                        <i class="bi bi-plus-circle"></i>
+                        <div>
+                            <div style="font-weight: 600;">Nueva Transacción</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">Registra un movimiento</div>
+                        </div>
+                    </button>
+                    <button class="quick-action-btn" onclick="openModal('modalWishlist')">
+                        <i class="bi bi-trophy"></i>
+                        <div>
+                            <div style="font-weight: 600;">Nueva Meta</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">Crea un objetivo</div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Content Grid - Enhanced -->
+                <div class="content-grid">
+                    <!-- Expense Breakdown by Category - Horizontal Bars -->
+                    <div class="chart-card stagger-item">
+                        <div class="chart-header">
+                            <h3 class="chart-title">💸 Gastos por Categoría</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ gastos_por_categoria|length }} categorías</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; max-height: 300px; overflow-y: auto;">
+                            {% for cat in gastos_por_categoria|slice:":8" %}
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 8px; transition: all 0.2s ease;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: {{ cat.color }}20; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                                    {% if 'Comida' in cat.nombre %}🍔{% elif 'Transporte' in cat.nombre %}🚌{% elif 'Alquiler' in cat.nombre or 'Vivienda' in cat.nombre %}🏠{% elif 'Entretenimiento' in cat.nombre %}🎮{% elif 'Servicios' in cat.nombre %}💡{% elif 'Salud' in cat.nombre or 'Médico' in cat.nombre %}🏥{% elif 'Café' in cat.nombre %}☕{% elif 'Ropa' in cat.nombre %}👕{% else %}💰{% endif %}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                                        <span style="font-size: 0.875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ cat.nombre }}</span>
+                                        <span style="font-size: 0.875rem; font-weight: 600; color: {{ cat.color }};">${{ cat.total|floatformat:0 }}</span>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; overflow: hidden;">
+                                        <div style="background: {{ cat.color }}; height: 100%; width: {{ cat.porcentaje }}%; border-radius: 4px; transition: width 0.5s ease;"></div>
+                                    </div>
+                                </div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted); min-width: 35px; text-align: right;">{{ cat.porcentaje }}%</div>
+                            </div>
+                            {% empty %}
+                            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                <i class="bi bi-pie-chart" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                                No hay gastos registrados
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if gastos_por_categoria|length > 8 %}
+                        <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border); text-align: center;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">+ {{ gastos_por_categoria|length|add:"-8" }} categorías más</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Monthly Summary -->
+                    <div class="chart-card stagger-item">
+                        <div class="chart-header">
+                            <h3 class="chart-title">📋 Resumen del Mes</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Último mes</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                            <!-- Income -->
+                            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%); padding: 1rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-arrow-down-circle-fill" style="color: #10b981; font-size: 1.25rem;"></i>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Ingresos</div>
+                                            <div style="font-size: 1.25rem; font-weight: 700; color: #10b981;">${{ total_ingresos|floatformat:0 }}</div>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">Promedio</div>
+                                        <div style="font-size: 0.875rem; font-weight: 600;">${% if total_ingresos > 0 %}{{ total_ingresos|divide:6|floatformat:0 }}{% else %}0{% endif %}/mes</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Expenses -->
+                            <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.05) 100%); padding: 1rem; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="width: 40px; height: 40px; background: rgba(239, 68, 68, 0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-arrow-up-circle-fill" style="color: #ef4444; font-size: 1.25rem;"></i>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Gastos</div>
+                                            <div style="font-size: 1.25rem; font-weight: 700; color: #ef4444;">${{ total_gastos|floatformat:0 }}</div>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">Promedio</div>
+                                        <div style="font-size: 0.875rem; font-weight: 600;">${% if total_gastos > 0 %}{{ total_gastos|divide:6|floatformat:0 }}{% else %}0{% endif %}/mes</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Savings -->
+                            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%); padding: 1rem; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="width: 40px; height: 40px; background: rgba(99, 102, 241, 0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-piggy-bank-fill" style="color: #6366f1; font-size: 1.25rem;"></i>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Ahorro Total</div>
+                                            <div style="font-size: 1.25rem; font-weight: 700; color: #6366f1;">${{ balance|floatformat:0 }}</div>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">Tasa</div>
+                                        <div style="font-size: 0.875rem; font-weight: 600; color: {% if ahorro_porcentaje >= 30 %}#10b981{% else %}#f59e0b{% endif %};">{{ ahorro_porcentaje }}%</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 0.75rem;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                                        <span>0%</span>
+                                        <span>50%</span>
+                                        <span>100%</span>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.1); border-radius: 6px; height: 8px; overflow: hidden;">
+                                        <div style="background: linear-gradient(90deg, #6366f1, #8b5cf6); height: 100%; width: {% if ahorro_porcentaje > 100 %}100%{% else %}{{ ahorro_porcentaje }}%{% endif %}; border-radius: 6px;"></div>
+                                    </div>
+                                    <div style="text-align: center; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                        {% if ahorro_porcentaje >= 50 %}🎉 ¡Excelente ahorro!{% elif ahorro_porcentaje >= 30 %}💪 Buen trabajo{% else %}⚠️ Intenta ahorrar más{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen Mensual 2025 - Gráfica de Barras -->
+                <div class="chart-card stagger-item" style="margin-top: 1.5rem;">
+                    <div class="chart-header">
+                        <h3 class="chart-title">📊 Ingresos vs Gastos</h3>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">{{ monthly_labels|length }} meses</span>
+                    </div>
+                    <div style="height: 300px; margin-top: 1rem;">
+                        <canvas id="yearlyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions - Enhanced -->
+                <script>
+                    // yearlyChart - Dynamic data from database
+                    const yearlyCtx = document.getElementById('yearlyChart');
+                    if (yearlyCtx) {
+                        const monthlyLabels = [{% for label in monthly_labels %}'{{ label }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+                        const monthlyIngresos = [{% for val in monthly_ingresos %}{% if val > 0 %}{{ val }}{% else %}0{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}];
+                        const monthlyGastos = [{% for val in monthly_gastos %}{% if val > 0 %}{{ val }}{% else %}0{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}];
+                        
+                        new Chart(yearlyCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: monthlyLabels.length > 0 ? monthlyLabels : ['Sin datos'],
+                                datasets: [
+                                    {
+                                        label: 'Ingresos',
+                                        data: monthlyIngresos.length > 0 ? monthlyIngresos : [0],
+                                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                                        borderColor: '#10b981',
+                                        borderWidth: 1,
+                                        borderRadius: 4
+                                    },
+                                    {
+                                        label: 'Gastos',
+                                        data: monthlyGastos.length > 0 ? monthlyGastos : [0],
+                                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                                        borderColor: '#ef4444',
+                                        borderWidth: 1,
+                                        borderRadius: 4
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'top',
+                                        labels: {
+                                            color: '#94a3b8',
+                                            usePointStyle: true
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            color: '#94a3b8',
+                                            callback: function(value) { return '$' + value; }
+                                        },
+                                        grid: { color: 'rgba(255,255,255,0.1)' }
+                                    },
+                                    x: {
+                                        ticks: { color: '#94a3b8' },
+                                        grid: { display: false }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                </script>
+
+                <!-- Recent Transactions - Enhanced -->
+                <div class="transactions-card stagger-item">
+                    <div class="chart-header">
+                        <div>
+                            <h3 class="chart-title">💳 Transacciones Recientes</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ transacciones|length }} transacciones</span>
+                        </div>
+                        <button class="btn btn-ghost" onclick="WalletFlow.showSection('transactions', document.querySelector('[data-section=\'transactions\']'))">
+                            Ver todas <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                    {% for t in transacciones|slice:":6" %}
+                    <div class="transaction-item" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                        <div class="transaction-icon"
+                            style="background: {{ t.categoria.color }}20; color: {{ t.categoria.color }}; width: 40px; height: 40px; border-radius: 12px;">
+                            <i class="{{ t.categoria.icono }}" style="font-size: 1.1rem;"></i>
+                        </div>
+                        <div class="transaction-details" style="flex: 1;">
+                            <div class="transaction-name" style="font-weight: 500;">{{ t.descripcion|default:t.categoria.nombre }}</div>
+                            <div class="transaction-category" style="font-size: 0.75rem;">{{ t.categoria.nombre }} • {{ t.fecha|date:"d M" }}</div>
+                        </div>
+                        <div
+                            class="transaction-amount {% if t.categoria.tipo == 'INGRESO' %}income{% else %}expense{% endif %}"
+                            style="font-weight: 600; font-size: 0.9rem;">
+                            {% if t.categoria.tipo == 'INGRESO' %}+{% else %}-{% endif %}${{ t.monto|floatformat:0 }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="bi bi-receipt"></i>
+                        <h3>No hay transacciones</h3>
+                        <p>Comienza registrando tu primer movimiento</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Recent Goals - Enhanced Cards -->
+                {% if wishlist %}
+                <div class="chart-card stagger-item">
+                    <div class="chart-header">
+                        <div>
+                            <h3 class="chart-title">🎯 Tus Metas de Ahorro</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ wishlist|length }} meta{{ wishlist|pluralize }}</span>
+                        </div>
+                        <button class="btn btn-ghost" onclick="WalletFlow.showSection('goals', document.querySelector('[data-section=\'goals\']'))">
+                            Ver todas <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="goals-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                        {% for w in wishlist|slice:":3" %}
+                        <div class="goal-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; padding: 1.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">🎯</div>
+                                    <div class="goal-name" style="font-weight: 600; font-size: 1rem;">{{ w.item }}</div>
+                                </div>
+                                <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+                                    {{ w.progreso }}%
+                                </div>
+                            </div>
+                            
+                            <!-- Progress bar -->
+                            <div style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 10px; overflow: hidden; margin-bottom: 0.75rem;">
+                                <div style="background: linear-gradient(90deg, #6366f1, #8b5cf6); height: 100%; width: {{ w.progreso }}%; border-radius: 10px; transition: width 0.5s ease;"></div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                <div>
+                                    <span style="color: #10b981; font-weight: 600;">${{ w.ahorrado|floatformat:0 }}</span>
+                                    <span style="color: var(--text-muted);">ahorrado</span>
+                                </div>
+                                <div style="color: var(--text-muted);">
+                                    Meta: ${{ w.precio_objetivo|floatformat:0 }}
+                                </div>
+                            </div>
+                            
+                            {% if w.falta > 0 %}
+                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); text-align: center;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">💪 Falta ${{ w.falta|floatformat:0 }} para llegar</span>
+                            </div>
+                            {% else %}
+                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
+                                <span style="font-size: 0.75rem; color: #10b981;">🎉 ¡Meta alcanzada!</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Transactions Section -->
+            <div id="section-transactions" class="spa-section">
+                <!-- Summary Header -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <div class="glass-card" style="flex: 1; min-width: 200px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Total Ingresos</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">${{ total_ingresos|floatformat:0 }}</div>
+                    </div>
+                    <div class="glass-card" style="flex: 1; min-width: 200px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Total Gastos</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #ef4444;">${{ total_gastos|floatformat:0 }}</div>
+                    </div>
+                    <div class="glass-card" style="flex: 1; min-width: 200px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Balance</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #6366f1;">${{ balance|floatformat:0 }}</div>
+                    </div>
+                </div>
+
+                <div class="transactions-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Todas las Transacciones</h3>
+                        <button class="btn btn-primary" onclick="openModal('modalTransaccion')">
+                            <i class="bi bi-plus-lg"></i> Nueva Transacción
+                        </button>
+                    </div>
+                    
+                    {% for t in transacciones %}
+                    <div class="transaction-item" id="transaccion-{{ t.id }}">
+                        <div class="transaction-icon"
+                            style="background: {{ t.categoria.color }}20; color: {{ t.categoria.color }};">
+                            <i class="{{ t.categoria.icono }}"></i>
+                        </div>
+                        <div class="transaction-details">
+                            <div class="transaction-name">{{ t.descripcion|default:"Sin descripción" }}</div>
+                            <div class="transaction-category">{{ t.categoria.nombre }} • {{ t.fecha|date:"d M Y" }}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="transaction-amount {% if t.categoria.tipo == 'INGRESO' %}income{% else %}expense{% endif %}">
+                                {% if t.categoria.tipo == 'INGRESO' %}+{% else %}-{% endif %}${{ t.monto }}
+                            </div>
+                            <button onclick="eliminarTransaccion({{ t.id }})" 
+                                style="background: rgba(239, 68, 68, 0.2); border: none; color: #ef4444; padding: 0.5rem; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                                title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="bi bi-receipt"></i>
+                        <h3>No hay transacciones</h3>
+                        <p>Comienza registrando tu primer movimiento</p>
+                        <button class="btn btn-primary" onclick="openModal('modalTransaccion')"
+                            style="margin-top: 1rem;">
+                            <i class="bi bi-plus-lg"></i> Crear Primera Transacción
+                        </button>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Pagination -->
+                    {% if transacciones.paginator.num_pages > 1 %}
+                    <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                        {% if transacciones.has_previous %}
+                        <a href="?page=1#section-transactions" class="btn btn-ghost" style="padding: 0.5rem 0.75rem;">&laquo; Primera</a>
+                        <a href="?page={{ transacciones.previous_page_number }}#section-transactions" class="btn btn-ghost" style="padding: 0.5rem 0.75rem;">&lsaquo; Anterior</a>
+                        {% endif %}
+                        
+                        {% for num in transacciones.paginator.page_range %}
+                            {% if transacciones.number == num %}
+                            <span class="btn btn-primary" style="padding: 0.5rem 0.75rem; cursor: default;">{{ num }}</span>
+                            {% elif num > transacciones.number|add:'-3' and num < transacciones.number|add:'3' %}
+                            <a href="?page={{ num }}#section-transactions" class="btn btn-ghost" style="padding: 0.5rem 0.75rem;">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if transacciones.has_next %}
+                        <a href="?page={{ transacciones.next_page_number }}#section-transactions" class="btn btn-ghost" style="padding: 0.5rem 0.75rem;">Siguiente &rsaquo;</a>
+                        <a href="?page={{ transacciones.paginator.num_pages }}#section-transactions" class="btn btn-ghost" style="padding: 0.5rem 0.75rem;">Última &raquo;</a>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: center; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                        Página {{ transacciones.number }} de {{ transacciones.paginator.num_pages }} ({{ transacciones.paginator.count }} transacciones)
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Script para eliminar transacción -->
+            <script>
+                function eliminarTransaccion(id) {
+                    if (confirm('¿Estás seguro de eliminar esta transacción?')) {
+                        fetch('/api/transacciones/' + id + '/', {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                document.getElementById('transaccion-' + id).remove();
+                                alert('Transacción eliminada');
+                                location.reload();
+                            } else {
+                                alert('Error al eliminar');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error al eliminar');
+                        });
+                    }
+                }
+            </script>
+
+            <!-- Goals Section -->
+            <div id="section-goals" class="spa-section">
+                <div class="chart-header" style="margin-bottom: 1.5rem;">
+                    <h3 class="chart-title">Mis Metas de Ahorro</h3>
+                    <button class="btn btn-primary" onclick="openModal('modalWishlist')">
+                        <i class="bi bi-plus-lg"></i> Nueva Meta
+                    </button>
+                </div>
+                <div class="goals-grid">
+                    {% for w in wishlist %}
+                    <div class="goal-card">
+                        {% if w.imagen_url %}
+                        <img src="{{ w.imagen_url }}" alt="{{ w.item }}" class="goal-image">
+                        {% endif %}
+                        <div class="goal-header">
+                            <div>
+                                <div class="goal-name">{{ w.item }}</div>
+                                <div class="goal-target">Meta: ${{ w.precio_objetivo }}</div>
+                            </div>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-stats">
+                                <span class="goal-saved">${{ w.ahorrado }}</span>
+                                <span class="goal-remaining">Faltan ${{ w.falta }}</span>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: {{ w.progreso }}%"></div>
+                            </div>
+                            <div
+                                style="text-align: center; margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">
+                                {{ w.progreso }}% completado
+                            </div>
+                        </div>
+                        {% if w.enlace %}
+                        <a href="{{ w.enlace }}" target="_blank" class="btn btn-ghost"
+                            style="width: 100%; margin-top: 1rem;">
+                            <i class="bi bi-link-45deg"></i> Ver Producto
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Botón para agregar dinero -->
+                        <button onclick="openModal('modalAgregarDinero{{ w.id }}')" class="btn btn-primary" 
+                            style="width: 100%; margin-top: 0.5rem; background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="bi bi-plus-circle"></i> Agregar Dinero
+                        </button>
+                    </div>
+                    
+                    <!-- Modal para agregar dinero a meta {{ w.id }} -->
+                    <div id="modalAgregarDinero{{ w.id }}" class="modal"
+                        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+                        <div class="glass-card" style="width: 90%; max-width: 400px; animation: modalSlideIn 0.3s ease-out; border: 1px solid rgba(16, 185, 129, 0.3);">
+                            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%); margin: -1.5rem -1.5rem 1.5rem -1.5rem; padding: 1.5rem; border-radius: 20px 20px 0 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3 style="margin: 0;">
+                                        <span style="font-size: 1.5rem;">💰</span> Agregar a {{ w.item }}
+                                    </h3>
+                                    <button onclick="WalletFlow.closeModal('modalAgregarDinero{{ w.id }}')"
+                                        style="background: rgba(255,255,255,0.1); border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%;">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <p style="color: var(--text-muted); margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                                    Progreso actual: {{ w.progreso }}% (${{ w.ahorrado }} de ${{ w.precio_objetivo }})
+                                </p>
+                            </div>
+                            
+                            <form method="POST" action="{% url 'agregar_dinero_meta' w.id %}">
+                                {% csrf_token %}
+                                <div class="input-group" style="margin-bottom: 1.5rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                                        <i class="bi bi-cash" style="color: #10b981;"></i> ¿Cuánto vas a ahorrar?
+                                    </label>
+                                    <input type="number" name="monto" step="0.01" min="0.01" required
+                                        placeholder="0.00"
+                                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); font-size: 1.25rem; font-weight: 600;">
+                                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                                        Faltan ${{ w.falta }} para completar la meta
+                                    </small>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                                    <i class="bi bi-check-lg"></i> Agregar a mi Ahorro
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="bi bi-trophy"></i>
+                        <h3>No tienes metas de ahorro</h3>
+                        <p>Crea tu primera meta y comienza a ahorrar</p>
+                        <button class="btn btn-primary" onclick="openModal('modalWishlist')" style="margin-top: 1rem;">
+                            <i class="bi bi-plus-lg"></i> Crear Primera Meta
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="section-reports" class="spa-section">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Análisis Mensual</h3>
+                    </div>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="reportChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Section -->
+            <div id="section-insights" class="spa-section">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Insights Financieros</h3>
+                    </div>
+                    <div class="empty-state">
+                        <i class="bi bi-lightbulb"></i>
+                        <h3>Próximamente</h3>
+                        <p>Análisis inteligente de tus finanzas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Section -->
+            <div id="section-profile" class="spa-section">
+                <div class="section-header">
+                    <h2><i class="bi bi-person-circle"></i> Mi Perfil</h2>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <!-- Basic Info Card -->
+                    <div class="glass-card">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-fill" style="color: white;"></i>
+                            </div>
+                            <h3 style="margin: 0; font-size: 1.1rem;">Información Personal</h3>
+                        </div>
+                        
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="btn_profile" value="1">
+
+                            <!-- Avatar -->
+                            <div style="text-align: center; margin-bottom: 1.5rem;">
+                                <img src="{{ user_profile.get_avatar_url }}" alt="{{ user.username }}"
+                                    style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
+                                <div style="margin-top: 0.75rem;">
+                                    <label class="btn btn-ghost" style="cursor: pointer; font-size: 0.875rem;">
+                                        <i class="bi bi-camera"></i> Cambiar Foto
+                                        <input type="file" name="avatar" accept="image/*" hidden>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="input-group">
+                                    <label><i class="bi bi-person"></i> Nombre</label>
+                                    <input type="text" name="first_name" value="{{ user.first_name }}">
+                                </div>
+                                <div class="input-group">
+                                    <label><i class="bi bi-person"></i> Apellidos</label>
+                                    <input type="text" name="last_name" value="{{ user.last_name }}">
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-envelope"></i> Email</label>
+                                <input type="email" name="email" value="{{ user.email }}">
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-telephone"></i> Teléfono</label>
+                                <input type="tel" name="telefono" value="{{ user_profile.telefono|default:'' }}" placeholder="+1 234 567 8900">
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-calendar-date"></i> Fecha de Nacimiento</label>
+                                <input type="date" name="fecha_nacimiento" value="{{ user_profile.fecha_nacimiento|default:'' }}">
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-geo-alt"></i> Ubicación</label>
+                                <input type="text" name="ubicacion" value="{{ user_profile.ubicacion|default:'' }}" placeholder="Ciudad, País">
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-briefcase"></i> Ocupación</label>
+                                <input type="text" name="ocupacion" value="{{ user_profile.ocupacion|default:'' }}" placeholder="Ej: Desarrollador, Estudiante...">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Financial Settings Card -->
+                    <div class="glass-card">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-graph-up-arrow" style="color: white;"></i>
+                            </div>
+                            <h3 style="margin: 0; font-size: 1.1rem;">Configuración Financiera</h3>
+                        </div>
+
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="btn_profile" value="1">
+
+                            <div class="input-group">
+                                <label><i class="bi bi-cash"></i> Meta de Ingreso Mensual</label>
+                                <input type="number" name="meta_ingreso_mensual" value="{{ user_profile.meta_ingreso_mensual|default:'2000' }}" step="0.01" min="0">
+                                <small style="color: var(--text-muted); font-size: 0.75rem;">Tu ingreso esperado cada mes</small>
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-piggy-bank"></i> Meta de Ahorro Mensual (%)</label>
+                                <input type="number" name="meta_ahorro_mensual" value="{{ user_profile.meta_ahorro_mensual|default:'20' }}" min="0" max="100">
+                                <small style="color: var(--text-muted); font-size: 0.75rem;">Porcentaje que quieres ahorrar cada mes</small>
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-currency-exchange"></i> Moneda</label>
+                                <select name="moneda" style="width: 100%; padding: 0.75rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text);">
+                                    <option value="USD" {% if user_profile.moneda == 'USD' %}selected{% endif %}>$ USD - Dólar</option>
+                                    <option value="EUR" {% if user_profile.moneda == 'EUR' %}selected{% endif %}>€ EUR - Euro</option>
+                                    <option value="MXN" {% if user_profile.moneda == 'MXN' %}selected{% endif %}>$ MXN - Peso Mexicano</option>
+                                    <option value="COP" {% if user_profile.moneda == 'COP' %}selected{% endif %}>$ COP - Peso Colombiano</option>
+                                    <option value="ARS" {% if user_profile.moneda == 'ARS' %}selected{% endif %}>$ ARS - Peso Argentino</option>
+                                    <option value="BRL" {% if user_profile.moneda == 'BRL' %}selected{% endif %}>R$ BRL - Real Brasileiro</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-calendar-month"></i> Inicio de Mes</label>
+                                <select name="inicio_mes" style="width: 100%; padding: 0.75rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text);">
+                                    <option value="1" {% if user_profile.inicio_mes == 1 %}selected{% endif %}>1 del mes</option>
+                                    <option value="15" {% if user_profile.inicio_mes == 15 %}selected{% endif %}>15 del mes</option>
+                                </select>
+                                <small style="color: var(--text-muted); font-size: 0.75rem;">¿Desde qué día consideras el inicio de tu mes financiero?</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; background: linear-gradient(135deg, #10b981, #059669);">
+                                <i class="bi bi-check-circle"></i> Guardar Configuración
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Security Card -->
+                    <div class="glass-card">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-shield-lock-fill" style="color: white;"></i>
+                            </div>
+                            <h3 style="margin: 0; font-size: 1.1rem;">Seguridad</h3>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <a href="{% url 'password_change' %}" class="btn btn-ghost" style="justify-content: flex-start; padding: 1rem; border: 1px solid var(--border); border-radius: 12px;">
+                                <i class="bi bi-key-fill" style="color: #f59e0b;"></i>
+                                <span>Cambiar Contraseña</span>
+                            </a>
+                            
+                            <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <i class="bi bi-device-ssd" style="color: #6366f1;"></i>
+                                    <div>
+                                        <div style="font-weight: 500;">Sesión Activa</div>
+                                        <small style="color: var(--text-muted);">Este dispositivo</small>
+                                    </div>
+                                </div>
+                                <span style="background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem;">Activa</span>
+                            </div>
+
+                            <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 12px;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                    <i class="bi bi-clock-history" style="color: #3b82f6;"></i>
+                                    <span style="font-weight: 500;">Miembro desde</span>
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.875rem; padding-left: 2rem;">
+                                    {{ user.date_joined|date:"d M Y" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bio Card -->
+                    <div class="glass-card">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #8b5cf6, #a855f7); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-stars" style="color: white;"></i>
+                            </div>
+                            <h3 style="margin: 0; font-size: 1.1rem;">Acerca de Mí</h3>
+                        </div>
+
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="btn_profile" value="1">
+
+                            <div class="input-group">
+                                <label><i class="bi bi-emoji-smile"></i> ¿Quién soy?</label>
+                                <textarea name="bio" rows="3" placeholder="Cuéntanos sobre ti...">{{ user_profile.bio|default:'' }}</textarea>
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-tags"></i> Pronombres</label>
+                                <input type="text" name="pronouns" value="{{ user_profile.pronouns|default:'' }}" placeholder="él/ella, elle, etc.">
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-linkedin"></i> LinkedIn</label>
+                                <input type="url" name="linkedin" value="{{ user_profile.linkedin|default:'' }}" placeholder="https://linkedin.com/in/...">
+                            </div>
+
+                            <div class="input-group">
+                                <label><i class="bi bi-instagram"></i> Instagram</label>
+                                <input type="text" name="instagram" value="{{ user_profile.instagram|default:'' }}" placeholder="@usuario">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; background: linear-gradient(135deg, #8b5cf6, #a855f7);">
+                                <i class="bi bi-check-circle"></i> Guardar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Category Modal -->
+    <div id="modalCategoria" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="glass-card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;"><i class="bi bi-tag"></i> Nueva Categoría</h3>
+                <button onclick="WalletFlow.closeModal('modalCategoria')"
+                    style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="btn_categoria" value="1">
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;"><i class="bi bi-pencil"></i>
+                        Nombre</label>
+                    <input type="text" name="nombre_categoria" placeholder="Ej: Comida, Transporte..." required
+                        style="width: 100%; padding: 0.75rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); color: var(--text);">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;"><i
+                            class="bi bi-list-ul"></i> Tipo</label>
+                    <select name="tipo_categoria" required
+                        style="width: 100%; padding: 0.75rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); color: var(--text);">
+                        <option value="INGRESO">💰 Ingreso</option>
+                        <option value="GASTO" selected>💸 Gasto</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;"><i
+                            class="bi bi-emoji-smile"></i> Ícono</label>
+                    <input type="text" name="icono_categoria" value="bi-tag" placeholder="bi-cart-fill"
+                        style="width: 100%; padding: 0.75rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); color: var(--text);">
+                    <small style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                        Ver iconos en: <a href="https://icons.getbootstrap.com" target="_blank"
+                            style="color: var(--primary);">icons.getbootstrap.com</a>
+                    </small>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;"><i
+                            class="bi bi-palette"></i> Color</label>
+                    <input type="color" name="color_categoria" value="#6366f1"
+                        style="width: 100%; height: 50px; padding: 0.25rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg);">
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="WalletFlow.closeModal('modalCategoria')"
+                        style="flex: 1;">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="bi bi-check-circle"></i> Crear
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transaction Modal -->
+    <div id="modalTransaccion" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="glass-card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; animation: modalSlideIn 0.3s ease-out; border: 1px solid rgba(16, 185, 129, 0.3); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(16, 185, 129, 0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%); margin: -1.5rem -1.5rem 1.5rem -1.5rem; padding: 1.5rem; border-radius: 20px 20px 0 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
+                        <span style="font-size: 1.5rem;">💳</span>
+                        <span style="background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Nueva Transacción</span>
+                    </h3>
+                    <button onclick="WalletFlow.closeModal('modalTransaccion')"
+                        style="background: rgba(255,255,255,0.1); border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; transition: all 0.2s ease;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <p style="color: var(--text-muted); margin: 0.5rem 0 0 0; font-size: 0.875rem;">Registra un nuevo ingreso o gasto</p>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="btn_transaccion" value="1">
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label for="id_categoria" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-tag" style="color: #8b5cf6;"></i> Categoría
+                    </label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select name="categoria" id="id_categoria" required
+                            style="flex: 1; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease; font-size: 1rem;">
+                            {% for cat in categorias_ingresos %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}
+                            {% for cat in categorias_gastos %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-secondary" onclick="WalletFlow.openModal('modalNuevaCategoria')" 
+                            style="padding: 0.875rem 1rem; white-space: nowrap; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); border: none; color: white; font-weight: 500;">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label for="id_monto" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-cash" style="color: #10b981;"></i> Monto
+                    </label>
+                    <input type="number" name="monto" id="id_monto" step="0.01" min="0" required
+                        placeholder="0.00"
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease; font-size: 1.25rem; font-weight: 600;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label for="id_descripcion" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-pencil" style="color: #f59e0b;"></i> Descripción
+                    </label>
+                    <input type="text" name="descripcion" id="id_descripcion" 
+                        placeholder="Ej: Compra en supermercado"
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label for="id_fecha" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-calendar" style="color: #3b82f6;"></i> Fecha
+                    </label>
+                    <input type="date" name="fecha" id="id_fecha"
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease;">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); transition: all 0.3s ease;">
+                    <i class="bi bi-check-lg"></i> Guardar Transacción
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Nueva Categoría Modal -->
+    <div id="modalNuevaCategoria" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1100; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="glass-card" style="width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto; animation: modalSlideIn 0.3s ease-out; border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 102, 241, 0.1);">
+            <!-- Header con gradiente -->
+            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%); margin: -1.5rem -1.5rem 1.5rem -1.5rem; padding: 1.5rem; border-radius: 20px 20px 0 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
+                        <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">✨</span>
+                        Nueva Categoría
+                    </h3>
+                    <button onclick="WalletFlow.closeModal('modalNuevaCategoria')"
+                        style="background: rgba(255,255,255,0.1); border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; transition: all 0.2s ease;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <p style="color: var(--text-muted); margin: 0.5rem 0 0 0; font-size: 0.875rem;">Crea una categoría personalizada para tus transacciones</p>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="btn_categoria" value="1">
+
+                <!-- Preview dinámico -->
+                <div id="categoryPreview" style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border-radius: 16px; border: 1px dashed rgba(99, 102, 241, 0.3);">
+                    <div id="previewIcon" style="font-size: 2.5rem; margin-bottom: 0.5rem; transition: transform 0.3s ease;">🏷️</div>
+                    <div id="previewName" style="font-weight: 600; color: var(--text);">Vista previa</div>
+                    <div id="previewTipo" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Gasto</div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-emoji-smile" style="color: #6366f1;"></i> Nombre
+                    </label>
+                    <input type="text" name="nombre_categoria" id="inputNombre" class="form-control" 
+                        placeholder="Escribe un emoji + nombre..." 
+                        oninput="updatePreview()"
+                        required
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease; font-size: 1rem;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-arrow-down-up" style="color: #8b5cf6;"></i> Tipo
+                    </label>
+                    <select name="tipo_categoria" id="inputTipo" class="form-select" required
+                        onchange="updatePreview()"
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease; font-size: 1rem;">
+                        <option value="GASTO">💸 Gasto</option>
+                        <option value="INGRESO">💰 Ingreso</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-palette" style="color: #ec4899;"></i> Color
+                    </label>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="color" name="color_categoria" id="inputColor" value="#6366f1" 
+                            onchange="updatePreviewColor()"
+                            style="width: 50px; height: 50px; border: none; border-radius: 12px; cursor: pointer; background: none;">
+                        <input type="text" value="#6366f1" id="colorHex" readonly
+                            style="flex: 1; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); font-family: monospace;">
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-icons" style="color: #10b981;"></i> Icono (opcional)
+                    </label>
+                    <input type="text" name="icono_categoria" id="inputIcono" class="form-control" 
+                        placeholder="Deja vacío para auto-detectar"
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease;">
+                    <small style="color: var(--text-muted); display: block; margin-top: 0.5rem; font-size: 0.8rem;">
+                        ✨ Se detecta automáticamente del emoji
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); transition: all 0.3s ease;">
+                    <i class="bi bi-plus-lg"></i> Crear Categoría
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+    
+    <script>
+        function updatePreview() {
+            const nombre = document.getElementById('inputNombre').value || 'Nueva Categoría';
+            const tipo = document.getElementById('inputTipo').value;
+            
+            // Extraer emoji del nombre
+            const emojiMatch = nombre.match(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu);
+            const emoji = emojiMatch ? emojiMatch[0] : '🏷️';
+            
+            document.getElementById('previewIcon').textContent = emoji;
+            document.getElementById('previewName').textContent = nombre;
+            document.getElementById('previewTipo').textContent = tipo === 'INGRESO' ? '💰 Ingreso' : '💸 Gasto';
+        }
+        
+        function updatePreviewColor() {
+            const color = document.getElementById('inputColor').value;
+            document.getElementById('colorHex').value = color;
+            document.getElementById('categoryPreview').style.borderColor = color;
+            document.getElementById('previewIcon').style.color = color;
+        }
+        
+        document.getElementById('inputColor').addEventListener('input', updatePreviewColor);
+    </script>
+            </form>
+        </div>
+    </div>
+
+    <!-- Wishlist Modal -->
+    <div id="modalWishlist" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="glass-card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; animation: modalSlideIn 0.3s ease-out; border: 1px solid rgba(245, 158, 11, 0.3); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(245, 158, 11, 0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%); margin: -1.5rem -1.5rem 1.5rem -1.5rem; padding: 1.5rem; border-radius: 20px 20px 0 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
+                        <span style="font-size: 1.5rem;">🎯</span>
+                        <span style="background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Nueva Meta de Ahorro</span>
+                    </h3>
+                    <button onclick="WalletFlow.closeModal('modalWishlist')"
+                        style="background: rgba(255,255,255,0.1); border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; transition: all 0.2s ease;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <p style="color: var(--text-muted); margin: 0.5rem 0 0 0; font-size: 0.875rem;">Establece una meta de ahorro para ese producto deseado</p>
+            </div>
+            
+            <!-- Preview -->
+            <div id="wishlistPreview" style="text-align: center; margin-bottom: 1.5rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%); border-radius: 16px; border: 2px dashed rgba(245, 158, 11, 0.3);">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎁</div>
+                <div id="wishlistPreviewName" style="font-weight: 600; color: var(--text); font-size: 1.1rem;">Nombre de tu meta</div>
+                <div id="wishlistPreviewPrice" style="color: #10b981; font-size: 1.5rem; font-weight: 700; margin-top: 0.5rem;">$0.00</div>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="btn_wishlist" value="1">
+                
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-gift" style="color: #ec4899;"></i> ¿Qué quieres comprar?
+                    </label>
+                    <input type="text" name="item" id="wishlistItemInput" placeholder="Ej: PlayStation 5, MacBook, Viaje..."
+                        oninput="updateWishlistPreview()"
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease; font-size: 1rem;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-cash" style="color: #10b981;"></i> Precio objetivo
+                    </label>
+                    <input type="number" name="precio_objetivo" id="wishlistPriceInput" step="0.01" min="0" placeholder="0.00"
+                        oninput="updateWishlistPreview()"
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease; font-size: 1.25rem; font-weight: 600;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-link-45deg" style="color: #3b82f6;"></i> Enlace del producto (opcional)
+                    </label>
+                    <input type="text" name="enlace" placeholder="https://amazon.com/..."
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease;">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                        Deja en blanco si no tienes enlace
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); transition: all 0.3s ease;">
+                    <i class="bi bi-trophy"></i> Crear Meta de Ahorro
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function updateWishlistPreview() {
+            const name = document.getElementById('wishlistItemInput').value || 'Nombre de tu meta';
+            const price = document.getElementById('wishlistPriceInput').value || '0.00';
+            
+            document.getElementById('wishlistPreviewName').textContent = name;
+            document.getElementById('wishlistPreviewPrice').textContent = '$' + parseFloat(price).toFixed(2);
+        }
+    </script>
+
+    <!-- Profile Modal -->
+    <div id="modalProfile" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="glass-card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; animation: modalSlideIn 0.3s ease-out; border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 102, 241, 0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%); margin: -1.5rem -1.5rem 1.5rem -1.5rem; padding: 1.5rem; border-radius: 20px 20px 0 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
+                        <span style="font-size: 1.5rem;">👤</span>
+                        <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Mi Perfil</span>
+                    </h3>
+                    <button onclick="WalletFlow.closeModal('modalProfile')"
+                        style="background: rgba(255,255,255,0.1); border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; transition: all 0.2s ease;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="btn_profile" value="1">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="position: relative; display: inline-block;">
+                        <img src="{{ user_profile.get_avatar_url }}" alt="{{ user.username }}"
+                            style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 1rem; box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);">
+                        <label class="btn" style="position: absolute; bottom: 0; right: 0; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--dark-bg);">
+                            <i class="bi bi-camera" style="color: white; font-size: 0.9rem;"></i>
+                            <input type="file" name="avatar" accept="image/*" hidden>
+                        </label>
+                    </div>
+                    <div style="color: var(--text); font-weight: 600; font-size: 1.1rem;">{{ user.username }}</div>
+                </div>
+                
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">
+                        <i class="bi bi-person-vcard" style="color: #6366f1;"></i> Biografía
+                    </label>
+                    <textarea name="bio" rows="4" placeholder="Cuéntanos sobre ti..."
+                        style="width: 100%; padding: 0.875rem 1rem; background: var(--dark-bg-secondary); border: 2px solid transparent; border-radius: 12px; color: var(--text); transition: all 0.3s ease; resize: none;">{{ user_profile.bio }}</textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); transition: all 0.3s ease;">
+                    <i class="bi bi-check-lg"></i> Actualizar Perfil
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/charts.js' %}"></script>
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set current date
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('es-ES', options);
+        });
+
+        // 1. Expense Breakdown Chart (Donut)
+        const expenseLabels = [{% for cat in gastos_por_categoria %}'{{ cat.nombre }}'{% if not forloop.last %}, {% endif %} {% endfor %}];
+        const expenseData = [{% for cat in gastos_por_categoria %}{{ cat.total }}{% if not forloop.last %}, {% endif %} {% endfor %}];
+        const expenseColors = [{% for cat in gastos_por_categoria %}'{{ cat.color }}'{% if not forloop.last %}, {% endif %} {% endfor %}];
+
+        const expenseCtx = document.getElementById('expenseBreakdownChart');
+        if (expenseCtx && expenseLabels.length > 0) {
+            new Chart(expenseCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: expenseLabels,
+                    datasets: [{
+                        data: expenseData,
+                        backgroundColor: expenseColors,
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': $' + value.toFixed(2) + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Monthly Trend Chart (Line)
+        const monthlyLabels = [{% for label in monthly_labels %}'{{ label }}'{% if not forloop.last %}, {% endif %} {% endfor %}];
+        const monthlyIngresos = [{% for val in monthly_ingresos %}{{ val }}{% if not forloop.last %}, {% endif %} {% endfor %}];
+        const monthlyGastos = [{% for val in monthly_gastos %}{{ val }}{% if not forloop.last %}, {% endif %} {% endfor %}];
+
+        const trendCtx = document.getElementById('monthlyTrendChart');
+        if (trendCtx && monthlyLabels.length > 0) {
+            new Chart(trendCtx, {
+                type: 'bar',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: [
+                        {
+                            label: 'Ingresos',
+                            data: monthlyIngresos,
+                            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                            borderColor: '#10b981',
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        },
+                        {
+                            label: 'Gastos',
+                            data: monthlyGastos,
+                            backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                            borderColor: '#ef4444',
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 10,
+                            top: 10,
+                            bottom: 10
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 15,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function (value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94a3b8',
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 0,
+                                font: {
+                                    size: 11
+                                },
+                                padding: 5
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        }
+                    }
+                }
+            });
+        }
+
+        // Reports Chart - Income vs Expenses
+        const reportCtx = document.getElementById('reportChart');
+        if (reportCtx) {
+            new Chart(reportCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total'],
+                    datasets: [
+                        {
+                            label: 'Ingresos',
+                            data: [{{ total_ingresos }}],
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: '#10b981',
+                    borderWidth: 2
+                },
+                        {
+                    label: 'Gastos',
+                    data: [{{ total_gastos }}],
+                backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                borderColor: '#ef4444',
+                borderWidth: 2
+                        }
+                    ]
+                },
+        options: {
+            responsive: true,
+                maintainAspectRatio: false,
+                    plugins: {
+                legend: {
+                    labels: {
+                        color: '#94a3b8'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                        ticks: {
+                        color: '#94a3b8',
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#94a3b8'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+            })
+        })
+
+        // Show Django messages as toasts
+        {% if messages %}
+        {% for message in messages %}
+        toast.{{ message.tags }}('{{ message }}');
+        {% endfor %}
+        {% endif %}
+    });
+    </script>
+
+    <!-- Chart initialization script -->
+    <script src="{% static 'finance/js/charts.js' %}"></script>
+</body>
+
+</html>

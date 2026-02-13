@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chart Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body style="background: #1e293b; color: white; padding: 20px;">
+    <h1>Test de Gráficas</h1>
+
+    <div style="max-width: 400px; margin: 20px;">
+        <h2>Gráfica de Rosquilla</h2>
+        <canvas id="testChart1"></canvas>
+    </div>
+
+    <div style="max-width: 600px; margin: 20px;">
+        <h2>Gráfica de Líneas</h2>
+        <canvas id="testChart2"></canvas>
+    </div>
+
+    <script>
+        console.log('Chart.js loaded:', typeof Chart !== 'undefined');
+
+        // Test 1: Doughnut
+        const ctx1 = document.getElementById('testChart1');
+        if (ctx1) {
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Comida', 'Transporte'],
+                    datasets: [{
+                        data: [120, 80],
+                        backgroundColor: ['#f59e0b', '#3b82f6']
+                    }]
+                }
+            });
+            console.log('Doughnut chart created');
+        }
+
+        // Test 2: Line
+        const ctx2 = document.getElementById('testChart2');
+        if (ctx2) {
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar'],
+                    datasets: [{
+                        label: 'Ingresos',
+                        data: [2000, 2100, 2130],
+                        borderColor: '#10b981',
+                        fill: false
+                    }]
+                }
+            });
+            console.log('Line chart created');
+        }
+    </script>
+</body>
+
+</html>

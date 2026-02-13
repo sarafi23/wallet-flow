@@ -1,0 +1,407 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Flow - Tu Futuro Financiero Comienza Aquí</title>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+
+    <style>
+        /* Landing Page Specific Styles */
+        .landing-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar */
+        .navbar {
+            padding: 1.5rem 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .navbar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--primary);
+            font-size: 2rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 3rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-cta {
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all var(--transition-base);
+            text-decoration: none;
+        }
+
+        .btn-cta-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn-cta-secondary {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-cta-secondary:hover {
+            background: var(--glass-bg);
+            border-color: var(--primary);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 3rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 2rem;
+            text-align: center;
+            transition: all var(--transition-base);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .feature-description {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 4rem 2rem;
+            background: var(--dark-bg-secondary);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 1.125rem;
+        }
+
+        /* Screenshot Section */
+        .screenshot-section {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .screenshot-container {
+            margin-top: 3rem;
+            border-radius: var(--radius-2xl);
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+        }
+
+        .screenshot-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 6rem 1rem 3rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .btn-cta {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="landing-container">
+        <!-- Navbar -->
+        <nav class="navbar animate-fade-in-down">
+            <div class="navbar-container">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Wallet Flow</span>
+                </a>
+                <div class="nav-buttons">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                        <i class="bi bi-grid"></i> Ir al Dashboard
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-ghost">Iniciar Sesión</a>
+                    <a href="{% url 'register' %}" class="btn btn-primary">Registrarse</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title animate-fade-in-up">
+                    Tu asistente financiero<br>de confianza
+                </h1>
+                <p class="hero-subtitle animate-fade-in-up" style="animation-delay: 0.1s;">
+                    Controla tus gastos, alcanza tus metas y visualiza tu futuro financiero<br>con nuestra plataforma
+                    simple y poderosa.
+                </p>
+                <div class="hero-image-container animate-fade-in-up"
+                    style="animation-delay: 0.2s; margin-top: 3rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                    <img src="{% static 'finance/img/hero-dashboard.png' %}" alt="Financial Dashboard"
+                        style="width: 100%; height: auto; filter: drop-shadow(0 10px 30px rgba(99, 102, 241, 0.3));">
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features">
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h2 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem;">
+                    Todo lo que necesitas
+                </h2>
+                <p style="color: var(--text-muted); font-size: 1.125rem; max-width: 700px; margin: 0 auto;">
+                    Herramientas poderosas y fáciles de usar que transformarán la forma en que administras tu dinero.
+                    Desde seguimiento detallado hasta análisis inteligentes, todo lo que necesitas está aquí.
+                </p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card stagger-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h3 class="feature-title">Dashboard Inteligente</h3>
+                    <p class="feature-description">
+                        Visualiza tus finanzas de un vistazo con gráficos interactivos y estadísticas en tiempo real.
+                    </p>
+                </div>
+
+                <div class="feature-card stagger-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <h3 class="feature-title">Seguimiento de Gastos</h3>
+                    <p class="feature-description">
+                        Registra y categoriza cada transacción con iconos personalizados y descripciones detalladas.
+                    </p>
+                </div>
+
+                <div class="feature-card stagger-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-trophy"></i>
+                    </div>
+                    <h3 class="feature-title">Metas de Ahorro</h3>
+                    <p class="feature-description">
+                        Crea objetivos financieros y observa tu progreso con barras animadas y sugerencias inteligentes.
+                    </p>
+                </div>
+
+                <div class="feature-card stagger-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-pie-chart"></i>
+                    </div>
+                    <h3 class="feature-title">Análisis Detallado</h3>
+                    <p class="feature-description">
+                        Comprende tus patrones de gasto con reportes mensuales y análisis de categorías.
+                    </p>
+                </div>
+
+                <div class="feature-card stagger-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h3 class="feature-title">100% Privado</h3>
+                    <p class="feature-description">
+                        Tus datos financieros están seguros y solo tú tienes acceso a ellos.
+                    </p>
+                </div>
+
+                <div class="feature-card stagger-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-palette"></i>
+                    </div>
+                    <h3 class="feature-title">Diseño Premium</h3>
+                    <p class="feature-description">
+                        Interfaz moderna con glassmorphism, animaciones suaves y tema oscuro elegante.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 Wallet Flow. Creado con <i class="bi bi-heart-fill" style="color: var(--danger);"></i> para
+                tu éxito financiero.</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+
+</html>
