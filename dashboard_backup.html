@@ -1,0 +1,1312 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Wallet Flow</title>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+
+    <style>
+        /* Dashboard Specific Styles */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--card-bg-solid);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 2.5rem;
+            text-decoration: none;
+        }
+
+        .sidebar-logo i {
+            color: var(--primary);
+            font-size: 2rem;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+            padding-left: 1rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: var(--radius-lg);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-item:hover {
+            background: var(--glass-bg);
+            color: var(--text);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .nav-item i {
+            font-size: 1.25rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 2rem;
+            width: calc(100% - 280px);
+        }
+
+        /* Header */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header-title h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+
+        .header-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-base);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card.balance {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border-color: var(--primary);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-icon.balance {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .stat-icon.income {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .stat-icon.expense {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.8125rem;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .stat-change.positive {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-light);
+        }
+
+        .stat-change.negative {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-light);
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Chart Container */
+        .chart-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .quick-action-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+        }
+
+        .quick-action-btn i {
+            font-size: 1.5rem;
+        }
+
+        /* Transactions Table */
+        .transactions-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            transition: all var(--transition-fast);
+            margin-bottom: 0.5rem;
+        }
+
+        .transaction-item:hover {
+            background: var(--dark-bg-secondary);
+        }
+
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .transaction-details {
+            flex: 1;
+        }
+
+        .transaction-name {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.125rem;
+        }
+
+        .transaction-category {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .transaction-amount {
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+
+        .transaction-amount.income {
+            color: var(--success-light);
+        }
+
+        .transaction-amount.expense {
+            color: var(--danger-light);
+        }
+
+        /* Goals/Wishlist */
+        .goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .goal-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            transition: all var(--transition-base);
+        }
+
+        .goal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .goal-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: var(--radius-lg);
+            margin-bottom: 1rem;
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .goal-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .goal-target {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .goal-progress {
+            margin-top: 1rem;
+        }
+
+        .goal-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .goal-saved {
+            color: var(--success-light);
+            font-weight: 600;
+        }
+
+        .goal-remaining {
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* SPA Sections */
+        .spa-section {
+            display: none;
+        }
+
+        .spa-section.active {
+            display: block;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="{% url 'home' %}" class="sidebar-logo">
+                <i class="bi bi-wallet2"></i>
+                <span>Wallet Flow</span>
+            </a>
+
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-section-title">Principal</div>
+                    <a class="nav-item active" onclick="showSection('dashboard', this)">
+                        <i class="bi bi-grid-fill"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a class="nav-item" onclick="showSection('transactions', this)">
+                        <i class="bi bi-receipt"></i>
+                        <span>Transacciones</span>
+                    </a>
+                    <a class="nav-item" onclick="showSection('goals', this)">
+                        <i class="bi bi-trophy"></i>
+                        <span>Metas de Ahorro</span>
+                    </a>
+                </div>
+
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Cuenta</div>
+                    <a class="nav-item" onclick="showSection('categories', this)">
+                        <i class="bi bi-tag"></i>
+                        <span>Categorías</span>
+                    </a>
+                    <a class="nav-item" onclick="showSection('profile', this)">
+                        <i class="bi bi-person"></i>
+                        <span>Mi Perfil</span>
+                    </a>
+                    <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-item"
+                            style="width: 100%; background: none; border: none; text-align: left;">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard</h1>
+                    <p class="header-subtitle" id="current-date"></p>
+                </div>
+                <div class="header-actions">
+                    <img src="{{ user_profile.get_avatar_url }}" alt="{{ user.username }}" class="user-avatar"
+                        onclick="WalletFlow.openModal('modalProfile')">
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <div id="section-dashboard" class="spa-section active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card balance stagger-item">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Balance Total</div>
+                                <div class="stat-value">${{ balance }}</div>
+                                <div class="stat-change positive">
+                                    <i class="bi bi-arrow-up"></i>
+                                    <span>Este mes</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon balance">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stagger-item">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Ingresos</div>
+                                <div class="stat-value text-success">${{ total_ingresos }}</div>
+                            </div>
+                            <div class="stat-icon income">
+                                <i class="bi bi-arrow-down-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stagger-item">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Gastos</div>
+                                <div class="stat-value text-danger">${{ total_gastos }}</div>
+                            </div>
+                            <div class="stat-icon expense">
+                                <i class="bi bi-arrow-up-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions stagger-item">
+                    <button class="quick-action-btn" onclick="openModal('modalTransaccion')">
+                        <i class="bi bi-plus-circle"></i>
+                        <div>
+                            <div style="font-weight: 600;">Nueva Transacción</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">Registra un movimiento</div>
+                        </div>
+                    </button>
+                    <button class="quick-action-btn" onclick="openModal('modalWishlist')">
+                        <i class="bi bi-trophy"></i>
+                        <div>
+                            <div style="font-weight: 600;">Nueva Meta</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">Crea un objetivo</div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <!-- Chart -->
+                    <div class="chart-card stagger-item">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Ingresos vs Gastos</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Financial Health -->
+                    <div class="chart-card stagger-item">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Salud Financiera</h3>
+                        </div>
+                        <div class="chart-container"
+                            style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <div style="width: 180px; height: 180px; position: relative;">
+                                <canvas id="healthChart"></canvas>
+                                <div
+                                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                </div>
+                            </div>
+                            <div
+                                style="margin-top: 1rem; text-align: center; font-size: 0.875rem; color: var(--text-muted);">
+                                {% if balance > 0 %}
+                                ✓ Balance positivo
+                                {% else %}
+                                ⚠ Balance negativo
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="transactions-card stagger-item">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Últimas Transacciones</h3>
+                        <button class="btn btn-ghost"
+                            onclick="showSection('transactions', document.querySelector('.nav-item:nth-child(2)'))">
+                            Ver todas <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                    {% for t in transacciones|slice:":5" %}
+                    <div class="transaction-item">
+                        <div class="transaction-icon"
+                            style="background: {{ t.categoria.color }}20; color: {{ t.categoria.color }};">
+                            <i class="{{ t.categoria.icono }}"></i>
+                        </div>
+                        <div class="transaction-details">
+                            <div class="transaction-name">{{ t.descripcion|default:"Sin descripción" }}</div>
+                            <div class="transaction-category">{{ t.categoria.nombre }} • {{ t.fecha|date:"d M Y" }}
+                            </div>
+                        </div>
+                        <div
+                            class="transaction-amount {% if t.categoria.tipo == 'INGRESO' %}income{% else %}expense{% endif %}">
+                            {% if t.categoria.tipo == 'INGRESO' %}+{% else %}-{% endif %}${{ t.monto }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="bi bi-receipt"></i>
+                        <h3>No hay transacciones</h3>
+                        <p>Comienza registrando tu primer movimiento</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Recent Goals -->
+                {% if wishlist %}
+                <div class="chart-card stagger-item">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Metas Recientes</h3>
+                        <button class="btn btn-ghost"
+                            onclick="showSection('goals', document.querySelector('.nav-item:nth-child(3)'))">
+                            Ver todas <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="goals-grid">
+                        {% for w in wishlist|slice:":3" %}
+                        <div class="goal-card">
+                            {% if w.imagen_url %}
+                            <img src="{{ w.imagen_url }}" alt="{{ w.item }}" class="goal-image">
+                            {% endif %}
+                            <div class="goal-header">
+                                <div>
+                                    <div class="goal-name">{{ w.item }}</div>
+                                    <div class="goal-target">Meta: ${{ w.precio_objetivo }}</div>
+                                </div>
+                            </div>
+                            <div class="goal-progress">
+                                <div class="goal-stats">
+                                    <span class="goal-saved">${{ w.ahorrado }}</span>
+                                    <span class="goal-remaining">Faltan ${{ w.falta }}</span>
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-bar" style="width: {{ w.progreso }}%"></div>
+                                </div>
+                                <div
+                                    style="text-align: center; margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">
+                                    {{ w.progreso }}% completado
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Transactions Section -->
+            <div id="section-transactions" class="spa-section">
+                <div class="transactions-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Todas las Transacciones</h3>
+                        <button class="btn btn-primary" onclick="openModal('modalTransaccion')">
+                            <i class="bi bi-plus-lg"></i> Nueva Transacción
+                        </button>
+                    </div>
+                    {% for t in transacciones %}
+                    <div class="transaction-item">
+                        <div class="transaction-icon"
+                            style="background: {{ t.categoria.color }}20; color: {{ t.categoria.color }};">
+                            <i class="{{ t.categoria.icono }}"></i>
+                        </div>
+                        <div class="transaction-details">
+                            <div class="transaction-name">{{ t.descripcion|default:"Sin descripción" }}</div>
+                            <div class="transaction-category">{{ t.categoria.nombre }} • {{ t.fecha|date:"d M Y" }}
+                            </div>
+                        </div>
+                        <div
+                            class="transaction-amount {% if t.categoria.tipo == 'INGRESO' %}income{% else %}expense{% endif %}">
+                            {% if t.categoria.tipo == 'INGRESO' %}+{% else %}-{% endif %}${{ t.monto }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="bi bi-receipt"></i>
+                        <h3>No hay transacciones</h3>
+                        <p>Comienza registrando tu primer movimiento</p>
+                        <button class="btn btn-primary" onclick="openModal('modalTransaccion')"
+                            style="margin-top: 1rem;">
+                            <i class="bi bi-plus-lg"></i> Crear Primera Transacción
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Goals Section -->
+            <div id="section-goals" class="spa-section">
+                <div class="chart-header" style="margin-bottom: 1.5rem;">
+                    <h3 class="chart-title">Mis Metas de Ahorro</h3>
+                    <button class="btn btn-primary" onclick="openModal('modalWishlist')">
+                        <i class="bi bi-plus-lg"></i> Nueva Meta
+                    </button>
+                </div>
+                <div class="goals-grid">
+                    {% for w in wishlist %}
+                    <div class="goal-card">
+                        {% if w.imagen_url %}
+                        <img src="{{ w.imagen_url }}" alt="{{ w.item }}" class="goal-image">
+                        {% endif %}
+                        <div class="goal-header">
+                            <div>
+                                <div class="goal-name">{{ w.item }}</div>
+                                <div class="goal-target">Meta: ${{ w.precio_objetivo }}</div>
+                            </div>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-stats">
+                                <span class="goal-saved">${{ w.ahorrado }}</span>
+                                <span class="goal-remaining">Faltan ${{ w.falta }}</span>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: {{ w.progreso }}%"></div>
+                            </div>
+                            <div
+                                style="text-align: center; margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">
+                                {{ w.progreso }}% completado
+                            </div>
+                        </div>
+                        {% if w.enlace %}
+                        <a href="{{ w.enlace }}" target="_blank" class="btn btn-ghost"
+                            style="width: 100%; margin-top: 1rem;">
+                            <i class="bi bi-link-45deg"></i> Ver Producto
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="bi bi-trophy"></i>
+                        <h3>No tienes metas de ahorro</h3>
+                        <p>Crea tu primera meta y comienza a ahorrar</p>
+                        <button class="btn btn-primary" onclick="openModal('modalWishlist')" style="margin-top: 1rem;">
+                            <i class="bi bi-plus-lg"></i> Crear Primera Meta
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="section-reports" class="spa-section">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Análisis Mensual</h3>
+                    </div>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="reportChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Section -->
+            <div id="section-insights" class="spa-section">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Insights Financieros</h3>
+                    </div>
+                    <div class="empty-state">
+                        <i class="bi bi-lightbulb"></i>
+                        <h3>Próximamente</h3>
+                        <p>Análisis inteligente de tus finanzas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Management Section -->
+            <div id="section-categories" class="spa-section">
+                <div class="section-header">
+                    <h2><i class="bi bi-tag"></i> Mis Categorías</h2>
+                    <button class="btn btn-primary" onclick="openModal('modalCategoria')">
+                        <i class="bi bi-plus-lg"></i> Nueva Categoría
+                    </button>
+                </div>
+
+                <!-- Income Categories -->
+                <div class="glass-card" style="margin-bottom: 1.5rem;">
+                    <h3
+                        style="color: var(--success); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bi bi-arrow-down-circle"></i> Ingresos
+                    </h3>
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                        {% for cat in categorias_ingresos %}
+                        <div class="glass-card"
+                            style="padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <i class="bi {{ cat.icono }}" style="font-size: 1.5rem; color: {{ cat.color }};"></i>
+                                <span style="font-weight: 500;">{{ cat.nombre }}</span>
+                            </div>
+                            <form method="POST" style="margin: 0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="btn_delete_categoria" value="1">
+                                <input type="hidden" name="categoria_id" value="{{ cat.id }}">
+                                <button type="submit" class="btn btn-ghost"
+                                    style="padding: 0.25rem 0.5rem; color: var(--danger);"
+                                    onclick="return confirm('¿Eliminar categoría {{ cat.nombre }}?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% empty %}
+                        <p style="color: var(--text-muted); grid-column: 1 / -1;">No hay categorías de ingresos</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Expense Categories -->
+                <div class="glass-card">
+                    <h3
+                        style="color: var(--danger); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bi bi-arrow-up-circle"></i> Gastos
+                    </h3>
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                        {% for cat in categorias_gastos %}
+                        <div class="glass-card"
+                            style="padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <i class="bi {{ cat.icono }}" style="font-size: 1.5rem; color: {{ cat.color }};"></i>
+                                <span style="font-weight: 500;">{{ cat.nombre }}</span>
+                            </div>
+                            <form method="POST" style="margin: 0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="btn_delete_categoria" value="1">
+                                <input type="hidden" name="categoria_id" value="{{ cat.id }}">
+                                <button type="submit" class="btn btn-ghost"
+                                    style="padding: 0.25rem 0.5rem; color: var(--danger);"
+                                    onclick="return confirm('¿Eliminar categoría {{ cat.nombre }}?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% empty %}
+                        <p style="color: var(--text-muted); grid-column: 1 / -1;">No hay categorías de gastos</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Section -->
+            <div id="section-profile" class="spa-section">
+                <div class="section-header">
+                    <h2><i class="bi bi-person-circle"></i> Mi Perfil</h2>
+                </div>
+
+                <div class="glass-card" style="max-width: 650px; margin: 0 auto;">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="btn_profile" value="1">
+
+                        <!-- Avatar Section -->
+                        <div
+                            style="text-align: center; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border);">
+                            <img src="{{ user_profile.get_avatar_url }}" alt="{{ user.username }}"
+                                style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 1rem;">
+                            <div>
+                                <label class="btn btn-ghost" style="cursor: pointer;">
+                                    <i class="bi bi-camera"></i> Cambiar Foto
+                                    <input type="file" name="avatar" accept="image/*" hidden>
+                                </label>
+                            </div>
+                            <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;">{{ user_profile.get_full_name }}</h3>
+                            <p style="color: var(--text-muted);">@{{ user.username }}</p>
+                        </div>
+
+                        <!-- Name Fields -->
+                        <div class="input-group">
+                            <label><i class="bi bi-person"></i> Nombre</label>
+                            <input type="text" name="first_name" value="{{ user_profile.first_name }}"
+                                placeholder="Tu nombre">
+                        </div>
+
+                        <div class="input-group">
+                            <label><i class="bi bi-person"></i> Apellidos</label>
+                            <input type="text" name="last_name" value="{{ user_profile.last_name }}"
+                                placeholder="Tus apellidos">
+                        </div>
+
+                        <!-- Bio -->
+                        <div class="input-group">
+                            <label><i class="bi bi-chat-square-text"></i> Info</label>
+                            <textarea name="bio" rows="3"
+                                placeholder="Cuenta tu historia...">{{ user_profile.bio }}</textarea>
+                            <small
+                                style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                                Cuéntale a tus contactos sobre ti
+                            </small>
+                        </div>
+
+                        <!-- Pronouns -->
+                        <div class="input-group">
+                            <label><i class="bi bi-tags"></i> Pronombres</label>
+                            <input type="text" name="pronouns" value="{{ user_profile.pronouns }}"
+                                placeholder="Añade tus pronombres (ej: él/ella, elle)">
+                            <small
+                                style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                                Elige hasta 2 grupos de pronombres
+                            </small>
+                        </div>
+
+                        <!-- Website -->
+                        <div class="input-group">
+                            <label><i class="bi bi-globe"></i> Sitio web</label>
+                            <input type="url" name="website" value="{{ user_profile.website }}" placeholder="https://">
+                            <small
+                                style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                                Añade un enlace para impulsar el tráfico a tu sitio
+                            </small>
+                        </div>
+
+                        <!-- Username Display (Read-only) -->
+                        <div class="input-group">
+                            <label><i class="bi bi-at"></i> Nombre de usuario</label>
+                            <input type="text" value="{{ user.username }}" disabled
+                                style="background: var(--bg-secondary); cursor: not-allowed;">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary"
+                            style="width: 100%; margin-top: 2rem; font-size: 1rem; padding: 0.875rem;">
+                            <i class="bi bi-check-circle"></i> Actualizar Perfil
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Category Modal -->
+    <div id="modalCategoria" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="glass-card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;"><i class="bi bi-tag"></i> Nueva Categoría</h3>
+                <button onclick="WalletFlow.closeModal('modalCategoria')"
+                    style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="btn_categoria" value="1">
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;"><i class="bi bi-pencil"></i>
+                        Nombre</label>
+                    <input type="text" name="nombre_categoria" placeholder="Ej: Comida, Transporte..." required
+                        style="width: 100%; padding: 0.75rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); color: var(--text);">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;"><i
+                            class="bi bi-list-ul"></i> Tipo</label>
+                    <select name="tipo_categoria" required
+                        style="width: 100%; padding: 0.75rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); color: var(--text);">
+                        <option value="INGRESO">💰 Ingreso</option>
+                        <option value="GASTO" selected>💸 Gasto</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;"><i
+                            class="bi bi-emoji-smile"></i> Ícono</label>
+                    <input type="text" name="icono_categoria" value="bi-tag" placeholder="bi-cart-fill"
+                        style="width: 100%; padding: 0.75rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); color: var(--text);">
+                    <small style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                        Ver iconos en: <a href="https://icons.getbootstrap.com" target="_blank"
+                            style="color: var(--primary);">icons.getbootstrap.com</a>
+                    </small>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;"><i
+                            class="bi bi-palette"></i> Color</label>
+                    <input type="color" name="color_categoria" value="#6366f1"
+                        style="width: 100%; height: 50px; padding: 0.25rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg);">
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="WalletFlow.closeModal('modalCategoria')"
+                        style="flex: 1;">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="bi bi-check-circle"></i> Crear
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transaction Modal -->
+    <div id="modalTransaccion" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="glass-card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">Nueva Transacción</h3>
+                <button onclick="WalletFlow.closeModal('modalTransaccion')"
+                    style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form_transaccion.as_p }}
+                <input type="hidden" name="btn_transaccion" value="1">
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                    <i class="bi bi-check-lg"></i> Guardar Transacción
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Wishlist Modal -->
+    <div id="modalWishlist" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="glass-card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">Nueva Meta de Ahorro</h3>
+                <button onclick="WalletFlow.closeModal('modalWishlist')"
+                    style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form_wishlist.as_p }}
+                <input type="hidden" name="btn_wishlist" value="1">
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                    <i class="bi bi-check-lg"></i> Crear Meta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="modalProfile" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="glass-card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">Mi Perfil</h3>
+                <button onclick="closeModal('modalProfile')"
+                    style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="btn_profile" value="1">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <img src="{{ user_profile.get_avatar_url }}" alt="{{ user.username }}"
+                        style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 1rem;">
+                    <div>
+                        <label class="btn btn-ghost" style="cursor: pointer;">
+                            <i class="bi bi-camera"></i> Cambiar Foto
+                            <input type="file" name="avatar" accept="image/*" hidden>
+                        </label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Biografía</label>
+                    <textarea name="bio" rows="4" placeholder="Cuéntanos sobre ti...">{{ user_profile.bio }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="bi bi-check-lg"></i> Actualizar Perfil
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/charts.js' %}"></script>
+    <script>
+        // SPA Navigation
+        function showSection(sectionId, element) {
+            // Hide all sections
+            document.querySelectorAll('.spa-section').forEach(el => el.classList.remove('active'));
+            // Show target
+            document.getElementById('section-' + sectionId).classList.add('active');
+
+            // Update nav active state
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            // Update title
+            const titles = {
+                'dashboard': 'Dashboard',
+                'transactions': 'Transacciones',
+                'goals': 'Metas de Ahorro',
+                'reports': 'Reportes',
+                'insights': 'Insights Financieros'
+            };
+            document.getElementById('page-title').textContent = titles[sectionId];
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set current date
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('es-ES', options);
+
+            // Initialize health chart with real score
+            ChartUtils.createHealthChart('healthChart', {{ health_score }});
+
+        // Category breakdown data
+        const categoryLabels = [
+            {% for cat in ingresos_por_categoria %}'{{ cat.nombre }}'{% if not forloop.last %}, {% endif %} {% endfor %} {% if ingresos_por_categoria and gastos_por_categoria %}, {% endif %}
+        {% for cat in gastos_por_categoria %} '{{ cat.nombre }}'{% if not forloop.last %}, {% endif %} {% endfor %}
+            ];
+
+        const categoryData = [
+            {% for cat in ingresos_por_categoria %}{ { cat.total } } {% if not forloop.last %}, {% endif %} {% endfor %} {% if ingresos_por_categoria and gastos_por_categoria %}, {% endif %}
+        {% for cat in gastos_por_categoria %} -{{ cat.total }}{% if not forloop.last %}, {% endif %} {% endfor %}
+            ];
+
+        const categoryColors = [
+            {% for cat in ingresos_por_categoria %}'{{ cat.color }}'{% if not forloop.last %}, {% endif %} {% endfor %} {% if ingresos_por_categoria and gastos_por_categoria %}, {% endif %}
+        {% for cat in gastos_por_categoria %} '{{ cat.color }}'{% if not forloop.last %}, {% endif %} {% endfor %}
+            ];
+
+
+        // Create category breakdown chart
+        const ctx = document.getElementById('mainChart');
+        if (ctx && categoryLabels.length > 0) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{
+                        label: 'Monto',
+                        data: categoryData,
+                        backgroundColor: categoryColors,
+                        borderColor: categoryColors,
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const value = Math.abs(context.parsed.y);
+                                    label += '$' + value.toFixed(2);
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function (value) {
+                                    return '$' + Math.abs(value);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        ChartUtils.createIncomeExpensesChart('reportChart', {
+            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+            income: [5000, 5200, 4800, 5500, 6000, {{ total_ingresos }}],
+            expenses: [3000, 3200, 2800, 3500, 4000, {{ total_gastos }}]
+            });
+
+        // Show Django messages as toasts
+        {% if messages %}
+        {% for message in messages %}
+        toast.{ { message.tags } } ('{{ message }}');
+        {% endfor %}
+        {% endif %}
+        });
+    </script>
+</body>
+
+</html>

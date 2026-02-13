@@ -5,6 +5,26 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-wallet-flow-dev-key-change-in-production
+      - DATABASE_URL=postgres://walletflow:walletflow@db:5432/walletflow
+    depends_on:
+      - db
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=walletflow
+      - POSTGRES_PASSWORD=walletflow
+      - POSTGRES_DB=walletflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

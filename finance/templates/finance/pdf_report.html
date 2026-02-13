@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Wallet Flow - Reporte PDF</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #1f2937;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .summary {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 30px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+        
+        .summary-item {
+            text-align: center;
+        }
+        
+        .summary-item .label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .summary-item .value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+        
+        .summary-item .value.positive {
+            color: #10b981;
+        }
+        
+        .summary-item .value.negative {
+            color: #ef4444;
+        }
+        
+        .summary-item .value.total {
+            color: #6366f1;
+        }
+        
+        .section {
+            margin: 30px;
+        }
+        
+        .section h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #6366f1;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        
+        th {
+            background: #6366f1;
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        th:last-child {
+            text-align: right;
+        }
+        
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        td:last-child {
+            text-align: right;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .amount-income {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .amount-expense {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .type-ingreso {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .type-gasto {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 10px;
+        }
+        
+        @media print {
+            .page-break {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Wallet Flow</h1>
+        <div class="subtitle">Reporte Financiero Personal</div>
+    </div>
+    
+    <div class="summary">
+        <div class="summary-item">
+            <div class="label">Total Ingresos</div>
+            <div class="value positive">${{ total_ingresos|floatformat:2 }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="label">Total Gastos</div>
+            <div class="value negative">${{ total_gastos|floatformat:2 }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="label">Balance</div>
+            <div class="value total">${{ balance|floatformat:2 }}</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>📋 Últimas Transacciones</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Categoría</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transacciones %}
+                <tr>
+                    <td>{{ t.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ t.descripcion|default:t.categoria.nombre }}</td>
+                    <td>{{ t.categoria.nombre }}</td>
+                    <td>
+                        <span class="type-badge type-{{ t.categoria.tipo|lower }}">
+                            {% if t.categoria.tipo == 'INGRESO' %}Ingreso{% else %}Gasto{% endif %}
+                        </span>
+                    </td>
+                    <td class="{% if t.categoria.tipo == 'INGRESO' %}amount-income{% else %}amount-expense{% endif %}">
+                        {% if t.categoria.tipo == 'INGRESO' %}+{% else %}-{% endif %}${{ t.monto|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="footer">
+        <p>Generado por Wallet Flow el {{ fecha_generado }}</p>
+        <p>Este reporte es de carácter informativo</p>
+    </div>
+</body>
+</html>

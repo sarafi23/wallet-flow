@@ -1,0 +1,92 @@
+[
+    {
+        "model": "finance.categoria",
+        "pk": 1,
+        "fields": {
+            "nombre": "Trabajo / Sueldo",
+            "icono": "bi-briefcase-fill",
+            "color": "#10b981",
+            "tipo": "INGRESO"
+        }
+    },
+    {
+        "model": "finance.categoria",
+        "pk": 2,
+        "fields": {
+            "nombre": "Freelance / Extra",
+            "icono": "bi-lightning-fill",
+            "color": "#facc15",
+            "tipo": "INGRESO"
+        }
+    },
+    {
+        "model": "finance.categoria",
+        "pk": 3,
+        "fields": {
+            "nombre": "Regalos",
+            "icono": "bi-gift-fill",
+            "color": "#a855f7",
+            "tipo": "INGRESO"
+        }
+    },
+    {
+        "model": "finance.categoria",
+        "pk": 4,
+        "fields": {
+            "nombre": "Comida",
+            "icono": "bi-cart-fill",
+            "color": "#f59e0b",
+            "tipo": "GASTO"
+        }
+    },
+    {
+        "model": "finance.categoria",
+        "pk": 5,
+        "fields": {
+            "nombre": "Transporte",
+            "icono": "bi-car-front-fill",
+            "color": "#3b82f6",
+            "tipo": "GASTO"
+        }
+    },
+    {
+        "model": "finance.categoria",
+        "pk": 6,
+        "fields": {
+            "nombre": "Casa / Alquiler",
+            "icono": "bi-house-door-fill",
+            "color": "#ef4444",
+            "tipo": "GASTO"
+        }
+    },
+    {
+        "model": "finance.categoria",
+        "pk": 7,
+        "fields": {
+            "nombre": "Ocio / Cine",
+            "icono": "bi-controller",
+            "color": "#ec4899",
+            "tipo": "GASTO"
+        }
+    },
+    {
+        "model": "finance.categoria",
+        "pk": 8,
+        "fields": {
+            "nombre": "Salud",
+            "icono": "bi-heart-pulse-fill",
+            "color": "#ef4444",
+            "tipo": "GASTO"
+        }
+    },
+    {
+        "model": "finance.categoria",
+        "pk": 9,
+        "fields": {
+            "nombre": "Educación",
+            "icono": "bi-book-half",
+            "color": "#6366f1",
+            "tipo": "GASTO"
+        }
+    }
+]
